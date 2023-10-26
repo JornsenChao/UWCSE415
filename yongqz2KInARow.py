@@ -1,5 +1,5 @@
 '''
-<yourUWNetID>KInARow.py
+yongqz2KInARow.py
 Author: Yongqin Zhao
 An agent for playing "K-in-a-Row with Forbidden Squares"
 CSE 415, University of Washington
@@ -23,12 +23,6 @@ MY_NICKNAME = 'Jornsen the 415 survivor'
 I_PLAY = 'X' # Gets updated by call to prepare.
 
 
-
-''' QUESTION: 
-k in makeMove, I set to 3?
-
-'''
-
 # GAME VERSION INFO
 M = 0
 N = 0
@@ -36,23 +30,7 @@ K = 0
 TIME_LIMIT = 0
 
 ############################################################
-# set up zHashing
-num_row = N
-num_col = M
-PIECES = [' ', 'X', 'O', '-']
-zHashing_table = []
-transposition_table = {}
-def make_zHashing_table(num_row, num_col, PIECES):
-    zHashing_table = []
-    for row in range(num_row):
-        row_list = []
-        for col in range(num_col):
-            col_list = []
-            for piece in PIECES:
-                col_list.append(random.getrandbits(64))
-            row_list.append(col_list)
-        zHashing_table.append(row_list)
-    return zHashing_table
+
 ############################################################
 # INTRODUCTION
 def introduce():
@@ -66,32 +44,16 @@ def nickname():
 
 ############################################################
 
-# Receive and acknowledge information about the game from
-# the game master:
-'''
-agent's prepare function will be called by the game master before a new game starts. 
-This function takes four arguments and it should "remember" these values for the game that is about to be played.
-However, if your agent is in a match with itself, this prepare method will be called twice. 
-In this case, be careful not to let the agent assume it is playing 'O' on both turns.
-'''
-'''
-initial_state is a legal game state that can be used by your player
-k is the number of pieces in a row (or column or diagonal) needed to win the game
-what_side_I_play is 'X' if your agent will play as X; it is 'O' if your agent will play O
-opponent_nickname allows your utterance-generation mechanism to refer to the opponent by name
-'''
+
 # player1.prepare(INITIAL_STATE, K, 'X', player2.nickname())
 def prepare(initial_state, k, what_side_I_play, opponent_nickname):
     # Write code to save the relevant information in either
     # global variables.
-    global INITIAL_STATE, K, I_PLAY, OPPONENT_NICKNAME, zHashing_table
+    global INITIAL_STATE, K, I_PLAY, OPPONENT_NICKNAME
     INITIAL_STATE = initial_state
     K = k
     I_PLAY = what_side_I_play
     OPPONENT_NICKNAME = opponent_nickname
-    zHashing_table = make_zHashing_table(num_row, num_col, PIECES)
-    # print("Change this to return 'OK' when ready to test the method.")
-    # return "Not-OK"
     return "OK"
 
 ############################################################
@@ -125,13 +87,7 @@ def generateRemark(currentState, currentRemark):
 
     return newRemark
 ############################################################
-'''
-The currentRemark argument is a string representing a remark from the opponent on its last move.
-The timeLimit represents the number of milliseconds available for computing and returning the move.
-The move is a data item describing the chosen move. 
-The newState is the result of making the move from the given currentState. It must be a complete state and not just a board. 
-The newRemark to be returned must be a string.
-'''
+
 def makeMove(currentState, currentRemark, timeLimit=10000):
     # initialize player side, best_move, bestEval
     depth = 3
@@ -141,11 +97,9 @@ def makeMove(currentState, currentRemark, timeLimit=10000):
     best_move = None
     best_eval = - 10**(K+5) if player == 'X' else 10**(K+5)
     best_eval = float(best_eval)
-    # print('best_eval type is : '+ str(type(best_eval)))
-    # traverse all children
+
     for child_state in getDirectChildren(currentState):
         child_eval = minimax(child_state, depth)
-        # print('child_eval[0] type is : '+ str(type(child_eval[0])))
         if player == 'X' and child_eval[0] > best_eval:
             best_eval = child_eval[0]
             best_move = child_state
@@ -161,11 +115,7 @@ def makeMove(currentState, currentRemark, timeLimit=10000):
                 move = [i, j]
                 break
 
-    newState = best_move # This is not allowed, and even if
-    # it were allowed, the newState should be a deep COPY of the old.
-
-    # newRemark = "I need to think of something appropriate.\n" +\
-    # "Well, I guess I can say that this move is probably illegal."
+    newState = best_move
     newRemark = generateRemark(currentState, currentRemark)
 
     print("Returning from makeMove")
@@ -174,49 +124,12 @@ def makeMove(currentState, currentRemark, timeLimit=10000):
 
 ##########################################################################
 
-# The main adversarial search function:
-'''
-minimax should return a list whose first element is the numeric value of state as computed by your method.
-whose turn is it now? look at 
-'''
-# def minimax(state, depthRemaining, pruning=False, alpha=None, beta=None, zHashing=None):
-#     print("Calling minimax. We need to implement its body.")
-#     # depthRemaining == 0, hit base case, return staticEval of state at this level to parent node
-#     is_end = isEnd(state)
-#     if (depthRemaining == 0 or is_end):
-#         return staticEval(state)
-#     default_score = staticEval(state) # Value of the passed-in state. Needs to be computed.
-#     if state[1]=='X': # EXPECT A LARGE NUMBER
-#         maxEval = - 10**(K+5)
-#         for  s in getDirectChildren(state):
-#             eval = minimax(s, depthRemaining-1, pruning=False, alpha=None, beta=None, zHashing=None)
-#             maxEval = max(maxEval, eval)
-#         return maxEval
-#     if state[1]=='O':
-#         minEval = 10**(K+5)
-#         for  s in getDirectChildren(state):
-#             eval = minimax(s, depthRemaining-1, pruning=False, alpha=None, beta=None, zHashing=None)
-#             minEval = min(minEval, eval)
-#         return minEval
-#
-#     return [default_score, "my own optional stuff", "more of my stuff"]
-#     # Only the score is required here but other stuff can be returned
-#     # in the list, after the score.
-
 def minimax(state, depthRemaining, alpha=float('-inf'), beta=float('inf'), zHashing=None):
     # base case, return [staticEval of state, None]
     is_end = isEnd(state)
-    # not using zHashing
     if depthRemaining == 0 or is_end:
         return [staticEval(state), None]
-    # using zHashing
-    # if is_end:
-    #     return staticEval(state)
-    # hash_value = zobristHash(state)
-    # if hash_value in transposition_table:
-    #     return transposition_table[hash_value]
-    # if depthRemaining == 0:
-    #     return staticEval(state)
+
 
     if state[1] == 'X':  # EXPECT A LARGE NUMBER
         maxEval = -10**(K+5)
@@ -229,7 +142,6 @@ def minimax(state, depthRemaining, alpha=float('-inf'), beta=float('inf'), zHash
             alpha = max(alpha, maxEval)
             if beta <= alpha:
                 break
-        # new_hash = zobristHash(best_move[0])
         return [maxEval, best_move]
 
     else:  # state[1] == 'O'
@@ -243,13 +155,9 @@ def minimax(state, depthRemaining, alpha=float('-inf'), beta=float('inf'), zHash
             beta = min(beta, minEval)
             if beta <= alpha:
                 break
-        # new_hash = zobristHash(best_move[0])
         return [minEval, best_move]
 
 
-    # return [default_score, "my own optional stuff", "more of my stuff"]
-    # Only the score is required here but other stuff can be returned
-    # in the list, after the score.
 
 def getDirectChildren (state):
     children = []
@@ -271,9 +179,7 @@ def isEnd(state):
 ##########################################################################
 # calculate score of given state
 def staticEval(state):
-    # print('calling staticEval. Its value needs to be computed!')
-    # Values should be higher when the states are better for X,
-    # lower when better for O.
+
     my_side = state[1]
     oppo_side = 'O' if my_side == 'X' else 'X'
     board = state[0]
@@ -297,13 +203,7 @@ def helperAllMatrix(board, my_side, k):
         diagonals.append(main_diag)
         diagonals.append(anti_diag)
     diagonal_val = sum(calculate_value_in_a_row(diagonal,my_side, k) for diagonal in diagonals)
-    # diagonal_val = 0
-    # n = len(board)
-    # for i in range(-n + 1, n):
-    #     main_diag = [board[j][j + i] for j in range(max(0, -i), min(n, n - i))]
-    #     anti_diag = [board[j][i + n - 1 - j] for j in range(max(0, -i), min(n, n - i))]
-    #     diagonal_val += calculate_value_in_a_row(main_diag, my_side, k)
-    #     diagonal_val += calculate_value_in_a_row(anti_diag, my_side, k)
+
 
     return horizontal_val + vertical_val + diagonal_val
 
@@ -324,66 +224,5 @@ def calculate_value_in_a_row(lst, my_side,k):
 
     return 10 ** (k - space_ct) if potential_ct >= k else 0
 
-def zobristHash(board):
-    h = 0
-    for row in range(num_row):
-        for col in range(num_col):
-            piece = board[row][col]
-            piece_index = PIECES.index(piece)
-            h ^= zHashing_table[row][col][piece_index]
-    return h
-def zobristUnhash(h, move, piece):
-    (x, y) = move
-    h ^= zHashing_table[x][y][PIECES.index(piece)]
-    return h
-##########################################################################
-# def calculate_value_in_a_row(lst, my_side, k):
-#     potential_ct = 0
-#     space_ct = 0
-#     value = 0
-#
-#     for char in lst:
-#         if char in [' ', my_side]:
-#             potential_ct += 1
-#             if char == ' ':
-#                 space_ct += 1
-#         else:
-#             if potential_ct >= k:
-#                 value += 10**(k - space_ct)
-#             potential_ct, space_ct = 0, 0
-#
-#     # Handle the end of the row
-#     if potential_ct >= k:
-#         value += 10**(k - space_ct)
-#
-#     return value
-# def update_zhash(h, row, col, old_piece, new_piece):
-#     old_piece_index = PIECES.index(old_piece)
-#     new_piece_index = PIECES.index(new_piece)
-#
-#     # xor out the old piece's value
-#     h ^= zHashing_table[row][col][old_piece_index]
-#     # xor in the new piece's value
-#     h ^= zHashing_table[row][col][new_piece_index]
-#
-#     return h
-##########################################################################
- # test calculate_value_in_a_row
-# calculate_value_in_a_row([' ','O','O','O','X','X',' ',' '], 'X',3)
-# calculate_value_in_a_row([' ','O','O','O','X','X','X',' '], 'X',3)
-# calculate_value_in_a_row([' ','O','O','O','X',' ','X',' '], 'X',3)
-# calculate_value_in_a_row([' ','O','O','O','X',' ',' ',' '], 'X',3)
-# calculate_value_in_a_row([' ','O','O','O','X',' ','-',' '], 'X',3)
-# sample_state = \
-#               [[['X','X','X','O',' ',' ',' ','X'],
-#                 [' ','O',' ',' ',' ',' ',' ','X'],
-#                 ['X','X',' ','X','X','X','O','X'],
-#                 ['X',' ','-','-','-','-',' ','O'],
-#                 [' ',' ','O','-','-','X','X','X'],
-#                 ['X','X',' ','0',' ','X',' ','X'],
-#                 ['X','X','X',' ','X','X','O',' ']], "X"]
-# K = 7
-# staticEval(sample_state)
-##########################################################################
 
 
